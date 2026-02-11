@@ -1,0 +1,76 @@
+{
+  "version": "20260210_112547",
+  "best_model": "LightGBM",
+  "feature_cols": [
+    "temperature",
+    "humidity",
+    "month",
+    "day_of_week",
+    "day_of_month",
+    "week_of_year",
+    "is_weekend",
+    "consumption_lag1",
+    "consumption_lag2",
+    "consumption_lag3",
+    "consumption_lag7",
+    "consumption_ma7",
+    "consumption_ma14",
+    "consumption_ma30",
+    "consumption_std7",
+    "consumption_min7",
+    "consumption_max7",
+    "temp_lag1",
+    "region_encoded"
+  ],
+  "target": "consumption_kwh",
+  "train_period": "2023-01-08 a 2023-05-31",
+  "test_period": "2023-06-01 a 2023-06-29",
+  "metrics": {
+    "random_forest": {
+      "mae": 1.8620087467512574,
+      "rmse": 2.330805682843776,
+      "r2": 0.6117307497853047,
+      "mape": 13.91075258867307
+    },
+    "lightgbm": {
+      "mae": 1.860715846125651,
+      "rmse": 2.3256969086923798,
+      "r2": 0.6134309396123875,
+      "mape": 13.812915843847195
+    }
+  },
+  "cv_results": [
+    {
+      "test_month": "2023-03",
+      "train_size": 5200,
+      "test_size": 3100,
+      "mae": 1.8539606466586056,
+      "rmse": 2.3224378314483665,
+      "r2": 0.602453001210831
+    },
+    {
+      "test_month": "2023-04",
+      "train_size": 8300,
+      "test_size": 3000,
+      "mae": 1.8528216786500507,
+      "rmse": 2.328021343804914,
+      "r2": 0.6076870800219031
+    },
+    {
+      "test_month": "2023-05",
+      "train_size": 11300,
+      "test_size": 3100,
+      "mae": 1.8664464784570451,
+      "rmse": 2.3351084422670185,
+      "r2": 0.6190709365710806
+    },
+    {
+      "test_month": "2023-06",
+      "train_size": 14400,
+      "test_size": 2900,
+      "mae": 1.860715846125651,
+      "rmse": 2.3256969086923798,
+      "r2": 0.6134309396123875
+    }
+  ]
+}

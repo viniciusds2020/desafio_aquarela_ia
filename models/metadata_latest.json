@@ -1,0 +1,40 @@
+{
+  "version": "20260210_110144",
+  "best_model": "lightgbm",
+  "feature_cols": [
+    "temperature",
+    "humidity",
+    "month",
+    "day_of_week",
+    "day_of_month",
+    "week_of_year",
+    "is_weekend",
+    "consumption_lag1",
+    "consumption_lag2",
+    "consumption_lag3",
+    "consumption_lag7",
+    "consumption_ma7",
+    "consumption_ma14",
+    "consumption_ma30",
+    "consumption_std7",
+    "consumption_min7",
+    "consumption_max7",
+    "temp_lag1",
+    "region_encoded"
+  ],
+  "target": "consumption_kwh",
+  "metrics": {
+    "random_forest": {
+      "mae": 1.8620087467512574,
+      "rmse": 2.330805682843776,
+      "r2": 0.6117307497853046,
+      "mape": 13.91075258867307
+    },
+    "lightgbm": {
+      "mae": 1.860715846125651,
+      "rmse": 2.3256969086923798,
+      "r2": 0.6134309396123875,
+      "mape": 13.812915843847195
+    }
+  }
+}
