@@ -1,102 +1,76 @@
-# Previsão de Consumo Energético Residencial
+# Forecast de Consumo Energético
 
-## Desafio Técnico - Cientista de Dados Pleno
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![DuckDB](https://img.shields.io/badge/Analytics-DuckDB-FFF000)](https://duckdb.org/)
+[![MLflow](https://img.shields.io/badge/MLOps-MLflow-0194E2)](https://mlflow.org/)
 
-Solução preditiva para estimar o consumo energético diário de clientes residenciais, utilizando dados históricos de consumo, variáveis climáticas e dados cadastrais.
+Pipeline reproduzível para previsão de consumo energético residencial. O projeto integra tratamento de dados, feature engineering em SQL, validação temporal, comparação de modelos, tracking com MLflow e inferência versionada.
 
----
+## Objetivo
 
-## Estrutura do Projeto
+Prever consumo diário a partir do histórico por cliente, variáveis climáticas e atributos temporais, preservando a ordem temporal e evitando vazamento de informação.
 
-```
-├── data/                          # Dados brutos e processados
-│   ├── consumo.csv                # Histórico de consumo por cliente/data
-│   ├── clima.csv                  # Dados climáticos por região/data
-│   ├── clientes.csv               # Dados cadastrais dos clientes
-│   ├── energy.duckdb              # Banco DuckDB (gerado pelo pipeline)
-│   ├── features_processed.parquet # Features processadas (gerado)
-│   └── predictions.parquet        # Previsões do modelo (gerado)
-├── notebooks/
-│   ├── 01_eda.ipynb               # Análise Exploratória de Dados
-│   └── 02_pipeline_modeling.ipynb # Pipeline, DuckDB, Features, Modelagem
-├── dashboards/
-│   └── dashboard.ipynb            # Dashboard interativo com Plotly
-├── models/                        # Modelos treinados e metadados
-│   ├── best_model.pkl             # Melhor modelo (gerado)
-│   ├── random_forest_v*.pkl       # Random Forest versionado (gerado)
-│   ├── lightgbm_v*.pkl            # LightGBM versionado (gerado)
-│   ├── metadata_latest.json       # Metadados do último treinamento (gerado)
-│   └── mlruns/                    # MLflow tracking (gerado)
-├── src/
-│   ├── pipeline.py                # Pipeline reprodutível (ingestão → inferência)
-│   └── generate_presentation.py   # Gerador da apresentação PDF
-├── apresentacao.pdf               # Apresentação executiva
-├── requirements.txt               # Dependências Python
-└── README.md                      # Este arquivo
+## Arquitetura
+
+```mermaid
+flowchart LR
+    C["CSVs"] --> I["Ingestão"]
+    I --> D["DuckDB + SQL"]
+    D --> F["Features temporais"]
+    F --> T["Treinamento"]
+    T --> M["MLflow + modelos"]
+    M --> P["Inferência"]
 ```
 
----
+## Pipeline
 
-## Tecnologias Utilizadas
+| Etapa | Responsabilidade | Saída |
+|---|---|---|
+| Ingestão | carregar consumo, clima e clientes | DataFrames validados |
+| Transformação | corrigir regiões, imputar clima e gerar features | Parquet + DuckDB |
+| Treinamento | comparar Random Forest e LightGBM | modelo e metadados |
+| Inferência | aplicar o melhor modelo | previsões em Parquet |
 
-| Tecnologia | Uso |
-|------------|-----|
-| **Python 3.9+** | Linguagem principal |
-| **Pandas / NumPy** | Manipulação de dados |
-| **DuckDB + SQL** | Banco analítico e feature engineering |
-| **Scikit-learn** | Random Forest Regressor |
-| **LightGBM** | Gradient Boosting Regressor |
-| **MLflow** | Tracking de experimentos e modelos |
-| **Plotly** | Dashboard interativo |
-| **Matplotlib / Seaborn** | Visualizações na EDA |
-| **Git** | Versionamento de código |
+## Feature engineering
 
----
+As features são calculadas em SQL com DuckDB:
 
-## Instalação e Configuração
+- calendário: mês, dia da semana, dia do mês e semana do ano;
+- indicador de fim de semana;
+- lags de consumo de 1, 2, 3 e 7 dias;
+- médias móveis de 7, 14 e 30 dias;
+- mínimo, máximo e desvio-padrão móvel;
+- temperatura, umidade e temperatura defasada;
+- codificação da região.
 
-### 1. Clonar o repositório
+As janelas usam apenas observações anteriores à data prevista.
+
+## Modelos e resultados
+
+Validação principal: treino entre janeiro e maio e teste em junho.
+
+| Modelo | MAE (kWh) | RMSE (kWh) | R² | MAPE |
+|---|---:|---:|---:|---:|
+| Random Forest | 1,86 | 2,39 | 0,61 | 14,5% |
+| LightGBM | **1,86** | **2,38** | **0,61** | **14,5%** |
+
+> Resultados associados ao conjunto de dados deste repositório. Eles não constituem garantia de desempenho em outros cenários.
+
+## Execução
 
 ```bash
-git clone <url-do-repositorio>
+git clone https://github.com/viniciusds2020/desafio_aquarela_ia.git
 cd desafio_aquarela_ia
-```
 
-### 2. Criar ambiente virtual (recomendado)
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate # Windows
 
-```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
-```
-
-### 3. Instalar dependências
-
-```bash
 pip install -r requirements.txt
-```
-
----
-
-## Ordem de Execução
-
-### Opção 1: Pipeline Automatizado (Recomendado)
-
-Executa todas as etapas de uma vez:
-
-```bash
 python src/pipeline.py
 ```
 
-O pipeline executa sequencialmente:
-1. **Ingestão** - Carrega os CSVs
-2. **Transformação** - Limpa dados, cria tabelas DuckDB, gera features via SQL
-3. **Treinamento** - Treina Random Forest e LightGBM com validação temporal
-4. **Inferência** - Gera previsões com o melhor modelo
-
-Para executar etapas individualmente:
+Etapas independentes:
 
 ```bash
 python src/pipeline.py --step ingest
@@ -105,56 +79,60 @@ python src/pipeline.py --step train
 python src/pipeline.py --step inference
 ```
 
-### Opção 2: Notebooks Interativos
-
-Execute na seguinte ordem:
-
-1. **EDA**: `notebooks/01_eda.ipynb`
-2. **Pipeline + Modelagem**: `notebooks/02_pipeline_modeling.ipynb`
-3. **Dashboard**: `dashboards/dashboard.ipynb`
+Visualize os experimentos:
 
 ```bash
-jupyter notebook
+mlflow ui --backend-store-uri models/mlruns
 ```
 
-### Gerar Apresentação
+## Artefatos gerados
 
-```bash
-python src/generate_presentation.py
+```text
+data/energy.duckdb
+data/features_processed.parquet
+data/predictions.parquet
+data/inference_output.parquet
+models/best_model.pkl
+models/metadata_latest.json
+models/mlruns/
 ```
 
----
+## Estrutura
 
-## Sobre a Solução
+```text
+data/                       # fontes e artefatos processados
+notebooks/                  # EDA e modelagem
+dashboards/                 # análises com Plotly
+models/                     # modelos, metadados e MLflow
+src/pipeline.py             # pipeline ponta a ponta
+src/generate_presentation.py
+apresentacao.pdf            # apresentação executiva
+```
 
-### Tratamento de Dados
+## Decisões técnicas
 
-- **Regiões inconsistentes**: 5 clientes com região "Desconhecida" foram atribuídos à região com padrão de consumo mais similar
-- **Temperaturas ausentes**: 45 valores (~5%) imputados por interpolação linear dentro de cada região
+- split por tempo em vez de amostragem aleatória;
+- DuckDB para transformação analítica local com SQL;
+- lags e rolling windows calculados sem usar o futuro;
+- MLflow para rastrear parâmetros, métricas e artefatos;
+- seleção do melhor modelo por RMSE;
+- metadados versionados para rastreabilidade.
 
-### Feature Engineering (via SQL no DuckDB)
+## Limitações
 
-- **Temporais**: mês, dia da semana, dia do mês, semana do ano, flag de fim de semana
-- **Lags autoregressivos**: consumo dos últimos 1, 2, 3 e 7 dias
-- **Médias móveis**: janelas de 7, 14 e 30 dias
-- **Estatísticas móveis**: desvio padrão, mínimo e máximo (janela de 7 dias)
-- **Climáticas**: temperatura, umidade, temperatura do dia anterior
+- o cutoff temporal está configurado para o dataset do projeto;
+- inferência operacional exigiria uma rotina para construir features futuras;
+- MAPE deve ser interpretado com cuidado quando o consumo se aproxima de zero;
+- ainda não há monitoramento de drift ou retreinamento automatizado.
 
-### Modelos Treinados
+## Próximas evoluções
 
-| Modelo | MAE (kWh) | RMSE (kWh) | R² | MAPE (%) |
-|--------|-----------|------------|-----|----------|
-| Random Forest | 1.86 | 2.39 | 0.61 | 14.5 |
-| **LightGBM** | **1.86** | **2.38** | **0.61** | **14.5** |
-
-### Validação Temporal
-
-- **Split principal**: Treino (Jan-Mai) / Teste (Jun)
-- **Expanding Window CV**: Validação mês a mês com janela de treino crescente
-- Evita data leakage temporal ao usar apenas dados passados para previsão
-
----
+- [ ] backtesting rolling-origin;
+- [ ] testes de dados e pipeline;
+- [ ] configuração externa de datas e hiperparâmetros;
+- [ ] registro formal de modelos;
+- [ ] API de inferência e monitoramento.
 
 ## Autor
 
-Desenvolvido como parte do desafio técnico para a posição de Cientista de Dados Pleno.
+Desenvolvido por [Vinicius de Sousa](https://github.com/viniciusds2020).
